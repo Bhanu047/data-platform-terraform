@@ -68,7 +68,7 @@ run "versioning_is_enabled_everywhere" {
   assert {
     condition = alltrue([
       for v in values(aws_s3_bucket_versioning.this) :
-      v.versioning_configuration[0].status == "Enabled"
+      one(v.versioning_configuration).status == "Enabled"
     ])
     error_message = "Versioning must be on; it is what makes an overwrite recoverable."
   }
@@ -89,7 +89,7 @@ run "encryption_defaults_to_sse_s3" {
   assert {
     condition = alltrue([
       for e in values(aws_s3_bucket_server_side_encryption_configuration.this) :
-      e.rule[0].apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
+      one(one(e.rule).apply_server_side_encryption_by_default).sse_algorithm == "AES256"
     ])
     error_message = "With no KMS key the buckets must still be encrypted, via SSE-S3."
   }
@@ -110,7 +110,7 @@ run "encryption_uses_kms_when_a_key_is_supplied" {
   assert {
     condition = alltrue([
       for e in values(aws_s3_bucket_server_side_encryption_configuration.this) :
-      e.rule[0].apply_server_side_encryption_by_default[0].sse_algorithm == "aws:kms"
+      one(one(e.rule).apply_server_side_encryption_by_default).sse_algorithm == "aws:kms"
     ])
     error_message = "A supplied KMS key should switch encryption to aws:kms."
   }
@@ -118,7 +118,7 @@ run "encryption_uses_kms_when_a_key_is_supplied" {
   assert {
     condition = alltrue([
       for e in values(aws_s3_bucket_server_side_encryption_configuration.this) :
-      e.rule[0].bucket_key_enabled == true
+      one(e.rule).bucket_key_enabled == true
     ])
     error_message = "Bucket keys must be on with KMS, or every object read costs a KMS call."
   }
