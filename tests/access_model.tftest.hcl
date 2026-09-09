@@ -5,6 +5,14 @@
 # aws_iam_policy_document.json -- asserting on that would be asserting on
 # the mock. The bucket lists are real configuration and are the decision
 # that actually matters.
+#
+# These use `command = apply` where the others use `plan`, and the reason is
+# specific: a bucket ARN is computed by AWS, so during a plan it is unknown
+# and reads as null, which makes `contains()` fail on a null argument rather
+# than answer the question. Under a mocked provider an apply calls nothing
+# real -- it just resolves the computed attributes to synthetic values, and
+# both sides of each comparison resolve to the same one, so the assertion
+# means what it says.
 
 mock_provider "aws" {}
 
@@ -38,7 +46,7 @@ variables {
 }
 
 run "pipeline_cannot_write_to_raw" {
-  command = plan
+  command = apply
 
   assert {
     condition = !contains(
@@ -50,7 +58,7 @@ run "pipeline_cannot_write_to_raw" {
 }
 
 run "pipeline_can_read_what_it_needs" {
-  command = plan
+  command = apply
 
   assert {
     condition     = contains(output.pipeline_readable_bucket_arns, output.bucket_arns["raw"])
@@ -64,7 +72,7 @@ run "pipeline_can_read_what_it_needs" {
 }
 
 run "pipeline_can_write_where_it_should" {
-  command = plan
+  command = apply
 
   assert {
     condition     = contains(output.pipeline_writable_bucket_arns, output.bucket_arns["curated"])
