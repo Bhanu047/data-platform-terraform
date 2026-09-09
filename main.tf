@@ -38,23 +38,29 @@ locals {
 locals {
   /*
     The access model, stated once as data rather than buried in a module
-    call. Written this way so it can be asserted on directly in a test and
-    read without tracing arguments through a module boundary -- who can
-    touch what is the thing a reviewer most needs to check.
+    call, and expressed in layers rather than ARNs.
+
+    Layers are the thing a reviewer actually reasons about; an ARN is an
+    artefact of the cloud and is not even known until apply time. Stating
+    the model in layers means it can be read at a glance and asserted on in
+    a plan-time test, with the ARNs derived below.
 
     The pipeline reads raw and staging, writes staging and curated. It has
     no write access to raw at all: raw is what the ingestion tier lands, and
     a transform job that can rewrite its own input can destroy the only copy
     of the source data.
   */
+  pipeline_readable_layers = ["raw", "staging"]
+  pipeline_writable_layers = ["staging", "curated"]
+
+  # ARNs are derived from the layer lists rather than written out again, so
+  # there is one place to change and no way for the two to disagree.
   pipeline_readable_arns = [
-    module.data_lake.bucket_arns["raw"],
-    module.data_lake.bucket_arns["staging"],
+    for layer in local.pipeline_readable_layers : module.data_lake.bucket_arns[layer]
   ]
 
   pipeline_writable_arns = [
-    module.data_lake.bucket_arns["staging"],
-    module.data_lake.bucket_arns["curated"],
+    for layer in local.pipeline_writable_layers : module.data_lake.bucket_arns[layer]
   ]
 }
 

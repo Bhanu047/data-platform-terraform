@@ -12,13 +12,27 @@ output "glue_databases" {
   value = module.catalog.database_names
 }
 
+output "pipeline_readable_layers" {
+  description = "Lake layers the pipeline role may read."
+  value       = local.pipeline_readable_layers
+}
+
+output "pipeline_writable_layers" {
+  description = <<-EOT
+    Lake layers the pipeline role may write. Raw is deliberately absent: it
+    holds the only copy of what the source sent, and a transform job that
+    can rewrite its own input can destroy it.
+  EOT
+  value       = local.pipeline_writable_layers
+}
+
 output "pipeline_readable_bucket_arns" {
-  description = "Buckets the pipeline role may read. Exposed so the boundary is assertable."
+  description = "The same grant as ARNs, derived from the layer list."
   value       = local.pipeline_readable_arns
 }
 
 output "pipeline_writable_bucket_arns" {
-  description = "Buckets the pipeline role may write. Raw is deliberately absent."
+  description = "The same grant as ARNs, derived from the layer list."
   value       = local.pipeline_writable_arns
 }
 
