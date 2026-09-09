@@ -1,0 +1,14 @@
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+# Never commit tfvars holding real values -- state and vars are where
+# credentials leak from. The environments/ files here contain no secrets
+# and are committed deliberately.
+*.auto.tfvars
+override.tf
+override.tf.json
+.DS_Store

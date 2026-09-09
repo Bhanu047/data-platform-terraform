@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          # The wrapper rewrites stdout, which makes failures harder to read.
+          terraform_wrapper: false
+
+      - name: Check formatting
+        run: terraform fmt -recursive -check -diff
+
+      # -backend=false: there is no state backend to reach, and there should
+      # not need to be one to check that the configuration is valid.
+      - name: Init
+        run: terraform init -backend=false
+
+      - name: Validate
+        run: terraform validate
+
+      # Every module validates on its own too. A module that only works when
+      # called from this root is not a module, it is a subdirectory.
+      - name: Validate each module independently
+        run: |
+          for dir in modules/*/; do
+            echo "==> $dir"
+            terraform -chdir="$dir" init -backend=false
+            terraform -chdir="$dir" validate
+          done
+
+      # Mocked providers, so no credentials and no AWS account.
+      - name: Run tests
+        run: terraform test
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init tflint
+        run: tflint --init
+
+      - name: Lint
+        run: tflint --recursive --format compact
