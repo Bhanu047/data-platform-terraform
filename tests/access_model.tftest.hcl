@@ -16,6 +16,29 @@
 
 mock_provider "aws" {}
 
+# `mock_provider` synthesises a placeholder string for every computed
+# attribute, including `aws_iam_policy_document.json`. The AWS provider then
+# rejects it, because `assume_role_policy` is validated as JSON while the
+# plan is being built.
+#
+# These hand those two data sources a syntactically valid document so the
+# resources can be planned. Nothing below asserts on them -- an assertion
+# against an override is an assertion against the fixture. The access model
+# is checked through the layer outputs, which are real configuration.
+override_data {
+  target = module.pipeline_identity.data.aws_iam_policy_document.assume_role
+  values = {
+    json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+  }
+}
+
+override_data {
+  target = module.pipeline_identity.data.aws_iam_policy_document.pipeline
+  values = {
+    json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+  }
+}
+
 variables {
   environment = "dev"
   org         = "acme"
